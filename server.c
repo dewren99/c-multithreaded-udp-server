@@ -9,24 +9,16 @@
 #include <arpa/inet.h> //inet_ntoa
 #include <string.h>    //memset
 #include <unistd.h>    //close
-#include <pthread.h>
 #include "server.h"
+#include "args.h"
 
 // #define PORT 8080
 
-struct args_s
-{
-    unsigned int port;
-    char *hostname;
-};
-
-static void init_server(void *arguments)
+void *init_server(void *_args)
 {
     printf("[SERVER] \n");
-    printf("Student Name: Deniz Evrendilek \n");
-    printf("Student ID: 301340591 \n\n");
 
-    struct args_s *args = arguments;
+    struct args_s *args = _args;
     unsigned int port = args->port;
     char *hostname = args->hostname;
     char client_msg[1024];
@@ -39,7 +31,7 @@ static void init_server(void *arguments)
     if (server_socket < 0)
     {
         printf("[SERVER] Could not create the socket\n");
-        return;
+        return NULL;
     }
 
     server_addr.sin_family = AF_INET;
@@ -50,7 +42,7 @@ static void init_server(void *arguments)
     if (res < 0)
     {
         printf("[SERVER] Port could not be binded\n");
-        return;
+        return NULL;
     }
 
     while (1)
@@ -62,7 +54,7 @@ static void init_server(void *arguments)
         if (res < 0)
         {
             printf("[SERVER] Could not recieve incoming messages\n");
-            return;
+            return NULL;
         }
 
         const char *client_ipv4 = inet_ntoa(client_addr.sin_addr);
@@ -78,15 +70,5 @@ static void init_server(void *arguments)
     }
 
     close(server_socket);
-    return;
-}
-
-void init_server_thread(unsigned int port, char *hostname)
-{
-    pthread_t await_datagram;
-    struct args_s args;
-    args.port = port;
-    args.hostname = hostname;
-    pthread_create(&await_datagram, NULL, (void *)init_server, (void *)&args);
-    pthread_join(await_datagram, NULL);
+    return NULL;
 }

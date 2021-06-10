@@ -1,12 +1,8 @@
 make :
-	make clean && make client && make main
+	make clean && make main
 
-main: main.c server.c
-	gcc -o main main.c server.c list.o -lpthread 
-
-client: client.c
-	gcc -o client client.c
+main: main.c server.c client.c input_reciever.c
+	gcc -o main main.c server.c client.c input_reciever.c list.o -lpthread 
 
 clean:
-	rm -f client
 	rm -f main
