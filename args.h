@@ -1,6 +1,6 @@
-struct args_s
-{
+struct args_s {
     unsigned int port;
     char *hostname;
-    char *message;
+    void *message;
+    pthread_mutex_t lock;
 };
