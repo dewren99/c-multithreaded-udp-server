@@ -6,26 +6,6 @@
 #include "args.h"
 #include "list.h"
 
-static bool validate_action(char *action) {
-    return strncmp("s-talk", action, 6) == 0
-               ? true
-               : printf("Command \"%s\" not found, expected \"s-talk\"\n",
-                        action) &&
-                     false;
-}
-
-static bool validate_port(unsigned int port) {
-    if (port > 65353) {
-        printf("Port number %d is invalid, maximum value is 65353\n", port);
-        return false;
-    } else if (port < 1023) {
-        printf("Port number %d is invalid, ports 0-1023 are usually reserved\n",
-               port);
-        return false;
-    }
-    return true;
-}
-
 static char message_slots[LIST_MAX_NUM_NODES][1024];
 static unsigned int slot_i = 0;
 static void inc_slot() {
@@ -57,7 +37,7 @@ void *init_input_reciever(void *_args) {
     while (1) {
         // memset((void *)input_buffer, 0, sizeof input_buffer);
         pthread_mutex_lock(&lock);
-        printf("- ");
+        printf("> ");
         scanf("%[^\n]%*c", message_slots[slot_i]);
         List_add(list, &message_slots[slot_i]);
         inc_slot();

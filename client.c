@@ -15,17 +15,14 @@
 
 #include "args.h"
 #include "list.h"
+// #include "message.h"
 
 void *init_client(void *_args) {
-    // printf("[CLIENT] \n");
-
     struct args_s *args = _args;
     unsigned int port = args->port;
     List *list = args->message;
     char *message;
     pthread_mutex_t lock = args->lock;
-    int res;
-    // const char client_msg[] = "HELLO";
 
     // create socket
     int client_socket = socket(AF_INET, SOCK_DGRAM, 0);
@@ -41,20 +38,18 @@ void *init_client(void *_args) {
     server_addr.sin_addr.s_addr = INADDR_ANY;  // use the IP of the local
                                                // machine
 
+    int res;
     while (1) {
         pthread_mutex_lock(&lock);
         if (list && List_count(list)) {
-            message = (char *)List_first(list);
-            printf("CLIENT START %s\n", (char *)List_curr(list));
+            message = List_first(list);
             res = sendto(client_socket, message, strlen(message), 0,
                          (const struct sockaddr *)&server_addr,
                          sizeof server_addr);
             if (res < 0) {
                 printf("Message could not be sent\n");
             }
-            printf("CLIENT HERE\n");
             List_remove(list);
-            printf("CLIENT END\n");
         }
         pthread_mutex_unlock(&lock);
     }

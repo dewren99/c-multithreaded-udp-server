@@ -7,6 +7,7 @@
 #include "client.h"
 #include "input_reciever.h"
 #include "list.h"
+#include "message_printer.h"
 #include "server.h"
 
 static bool validate_action(char *action) {
@@ -69,24 +70,29 @@ int main() {
     pthread_t await_datagram, get_input, send_datagram;
     pthread_mutex_t lock;
     pthread_mutex_init(&lock, NULL);
-    struct args_s args_server, args_client, args_input;
+    struct args_s args_server, args_client, args_input, args_printer;
     args_server.port = local_port;
     args_server.hostname = server_name;
     args_server.lock = lock;
+    args_server.message = list;
+
     args_client.port = remote_port;
     args_client.lock = lock;
     args_client.message = list;
+
     args_input.message = list;
     args_input.lock = lock;
+    args_printer.message = list;
+    args_printer.lock = lock;
 
     pthread_create(&await_datagram, NULL, init_server, (void *)&args_server);
     pthread_create(&get_input, NULL, init_input_reciever, (void *)&args_input);
     pthread_create(&send_datagram, NULL, init_client, (void *)&args_client);
+    pthread_create(&send_datagram, NULL, init_message_printer,
+                   (void *)&args_client);
 
     while (1)
         ;
-    // pthread_join(await_datagram, NULL);
-    // pthread_join(send_datagram, NULL);
 
     return 0;
 }

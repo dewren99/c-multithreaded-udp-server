@@ -8,16 +8,28 @@
 
 #include <arpa/inet.h>  //inet_ntoa
 #include <netinet/in.h>
+#include <pthread.h>  //pthread
 #include <stdio.h>
 #include <string.h>      //memset
 #include <sys/socket.h>  //socket
 #include <unistd.h>      //close
 
 #include "args.h"
+#include "list.h"
+
+static char message_slots[LIST_MAX_NUM_NODES][1024];
+static unsigned int slot_i = 0;
+static void inc_slot() {
+    slot_i = (LIST_MAX_NUM_NODES + slot_i + 1) % LIST_MAX_NUM_NODES;
+}
+static void dec_slot() {
+    slot_i = (LIST_MAX_NUM_NODES + slot_i - 1) % LIST_MAX_NUM_NODES;
+}
 
 void *init_server(void *_args) {
     struct args_s *args = _args;
     unsigned int port = args->port;
+    List *list = args->message;
     char *hostname = args->hostname;
     pthread_mutex_t lock = args->lock;
     char client_msg[1024];
@@ -45,7 +57,9 @@ void *init_server(void *_args) {
     }
 
     while (1) {
-        res = recvfrom(server_socket, client_msg, sizeof client_msg, 0,
+        pthread_mutex_lock(&lock);
+        res = recvfrom(server_socket, message_slots[slot_i],
+                       sizeof message_slots[slot_i], 0,
                        (struct sockaddr *)&client_addr, &client_addr_len);
         if (res < 0) {
             printf("[SERVER] Could not recieve incoming messages\n");
@@ -56,12 +70,18 @@ void *init_server(void *_args) {
         const uint16_t client_port = ntohs(client_addr.sin_port);
         // printf("[SERVER] received message from address: %s:%d\n",
         // client_ipv4, client_port);
-        printf("+ %s\n", client_msg);
+        // printf("server: %s\n", message_slots[slot_i]);
 
         char exit[] = {'!'};
-        if (strncmp(exit, client_msg, sizeof exit) == 0) {
+        if (strncmp(exit, message_slots[slot_i], sizeof exit) == 0) {
+            pthread_mutex_unlock(&lock);
             break;
         }
+
+        List_add(list, &message_slots[slot_i]);
+        inc_slot();
+
+        pthread_mutex_unlock(&lock);
     }
 
     close(server_socket);
