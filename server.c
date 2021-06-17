@@ -7,15 +7,19 @@
 #include "server.h"
 
 #include <arpa/inet.h>  //inet_ntoa
+#include <netdb.h>
 #include <netinet/in.h>
 #include <pthread.h>  //pthread
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>      //memset
 #include <sys/socket.h>  //socket
 #include <unistd.h>      //close
 
 #include "args.h"
 #include "list.h"
+
+static const char TERMINATE[] = {'!'};
 
 static char message_slots[LIST_MAX_NUM_NODES][1024];
 static unsigned int slot_i = 0;
@@ -32,10 +36,8 @@ void *init_server(void *_args) {
     List *list = args->message;
     char *hostname = args->hostname;
     pthread_mutex_t lock = args->lock;
-    char client_msg[1024];
     struct sockaddr_in client_addr, server_addr;
     int client_addr_len = sizeof client_addr;
-    memset(client_msg, '\0', sizeof client_msg);
 
     // create socket
     int server_socket = socket(AF_INET, SOCK_DGRAM, 0);
@@ -46,18 +48,19 @@ void *init_server(void *_args) {
 
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
-    server_addr.sin_addr.s_addr = INADDR_ANY;  // use the IP of the local
-                                               // machine
+    server_addr.sin_addr.s_addr = inet_addr(hostname);
 
     int res = bind(server_socket, (struct sockaddr *)&server_addr,
                    sizeof server_addr);
     if (res < 0) {
         printf("[SERVER] Port could not be binded\n");
-        return NULL;
+        exit(1);
+        // return NULL;
     }
 
     while (1) {
         pthread_mutex_lock(&lock);
+        memset(&message_slots[slot_i], 0, sizeof message_slots[slot_i]);
         res = recvfrom(server_socket, message_slots[slot_i],
                        sizeof message_slots[slot_i], 0,
                        (struct sockaddr *)&client_addr, &client_addr_len);
@@ -72,13 +75,12 @@ void *init_server(void *_args) {
         // client_ipv4, client_port);
         // printf("server: %s\n", message_slots[slot_i]);
 
-        char exit[] = {'!'};
-        if (strncmp(exit, message_slots[slot_i], sizeof exit) == 0) {
+        if (strncmp(TERMINATE, message_slots[slot_i], sizeof TERMINATE) == 0) {
             pthread_mutex_unlock(&lock);
             break;
         }
 
-        List_add(list, &message_slots[slot_i]);
+        List_add(list, (void *)&message_slots[slot_i]);
         inc_slot();
 
         pthread_mutex_unlock(&lock);

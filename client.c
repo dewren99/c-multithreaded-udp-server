@@ -42,7 +42,7 @@ void *init_client(void *_args) {
     while (1) {
         pthread_mutex_lock(&lock);
         if (list && List_count(list)) {
-            message = List_first(list);
+            message = (char *)List_first(list);
             res = sendto(client_socket, message, strlen(message), 0,
                          (const struct sockaddr *)&server_addr,
                          sizeof server_addr);

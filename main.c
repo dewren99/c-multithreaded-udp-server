@@ -1,7 +1,11 @@
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <pthread.h>  //pthread
 #include <stdio.h>
 #include <stdlib.h>  //atoi
 #include <string.h>  //strtok
+#include <sys/socket.h>
 
 #include "args.h"
 #include "client.h"
@@ -61,38 +65,52 @@ int main() {
         return -1;
     }
 
+    struct hostent *hostbyname = gethostbyname(server_name);
+    if (!hostbyname) {
+        printf("Could not find the host by the name %s\n", server_name);
+        return -1;
+    }
+
     printf("action: %s\n", action);
     printf("client port: %d\n", local_port);
     printf("server name: %s\n", server_name);
     printf("server port: %d\n\n", remote_port);
 
-    List *list = List_create();
-    pthread_t await_datagram, get_input, send_datagram;
-    pthread_mutex_t lock;
-    pthread_mutex_init(&lock, NULL);
+    List *messages_to_be_sent = List_create();
+    List *messages_to_be_printed = List_create();
+
+    pthread_t await_datagram, get_input, send_datagram, printer;
+    pthread_mutex_t messages_to_be_sent_lock, messages_to_be_printed_lock;
+    pthread_mutex_init(&messages_to_be_sent_lock, NULL);
+    pthread_mutex_init(&messages_to_be_printed_lock, NULL);
+
     struct args_s args_server, args_client, args_input, args_printer;
     args_server.port = local_port;
-    args_server.hostname = server_name;
-    args_server.lock = lock;
-    args_server.message = list;
+    args_server.hostname =
+        inet_ntoa(*((struct in_addr *)hostbyname->h_addr_list[0]));
+    args_server.lock = messages_to_be_printed_lock;
+    args_server.message = messages_to_be_printed;
 
     args_client.port = remote_port;
-    args_client.lock = lock;
-    args_client.message = list;
+    args_client.message = messages_to_be_sent;
+    args_client.lock = messages_to_be_sent_lock;
 
-    args_input.message = list;
-    args_input.lock = lock;
-    args_printer.message = list;
-    args_printer.lock = lock;
+    args_input.message = messages_to_be_sent;
+    args_input.lock = messages_to_be_sent_lock;
+
+    args_printer.message = messages_to_be_printed;
+    args_printer.lock = messages_to_be_printed_lock;
 
     pthread_create(&await_datagram, NULL, init_server, (void *)&args_server);
     pthread_create(&get_input, NULL, init_input_reciever, (void *)&args_input);
     pthread_create(&send_datagram, NULL, init_client, (void *)&args_client);
-    pthread_create(&send_datagram, NULL, init_message_printer,
-                   (void *)&args_client);
+    pthread_create(&printer, NULL, init_message_printer, (void *)&args_printer);
 
     while (1)
         ;
+
+    pthread_mutex_destroy(&messages_to_be_sent_lock);
+    pthread_mutex_destroy(&messages_to_be_printed_lock);
 
     return 0;
 }
