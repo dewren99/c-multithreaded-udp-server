@@ -86,14 +86,14 @@ int main() {
 
     struct args_s args_server, args_client, args_input, args_printer;
     args_server.port = local_port;
-    args_server.hostname =
-        inet_ntoa(*((struct in_addr *)hostbyname->h_addr_list[0]));
     args_server.lock = messages_to_be_printed_lock;
     args_server.message = messages_to_be_printed;
 
     args_client.port = remote_port;
     args_client.message = messages_to_be_sent;
     args_client.lock = messages_to_be_sent_lock;
+    args_client.hostname =
+        inet_ntoa(*((struct in_addr *)hostbyname->h_addr_list[0]));
 
     args_input.message = messages_to_be_sent;
     args_input.lock = messages_to_be_sent_lock;

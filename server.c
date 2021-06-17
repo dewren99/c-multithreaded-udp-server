@@ -34,7 +34,7 @@ void *init_server(void *_args) {
     struct args_s *args = _args;
     unsigned int port = args->port;
     List *list = args->message;
-    char *hostname = args->hostname;
+    // char *hostname = args->hostname;
     pthread_mutex_t lock = args->lock;
     struct sockaddr_in client_addr, server_addr;
     int client_addr_len = sizeof client_addr;
@@ -48,7 +48,7 @@ void *init_server(void *_args) {
 
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
-    server_addr.sin_addr.s_addr = inet_addr(hostname);
+    server_addr.sin_addr.s_addr = INADDR_ANY;
 
     int res = bind(server_socket, (struct sockaddr *)&server_addr,
                    sizeof server_addr);

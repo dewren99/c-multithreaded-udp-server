@@ -20,6 +20,7 @@
 void *init_client(void *_args) {
     struct args_s *args = _args;
     unsigned int port = args->port;
+    char *hostname = args->hostname;
     List *list = args->message;
     char *message;
     pthread_mutex_t lock = args->lock;
@@ -35,8 +36,9 @@ void *init_client(void *_args) {
 
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
-    server_addr.sin_addr.s_addr = INADDR_ANY;  // use the IP of the local
-                                               // machine
+    server_addr.sin_addr.s_addr = inet_addr(hostname);
+    // INADDR_ANY;  // use the IP of the local
+    // machine
 
     int res;
     while (1) {
