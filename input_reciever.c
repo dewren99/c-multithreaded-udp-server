@@ -1,10 +1,13 @@
 #include <pthread.h>  //pthread
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>  //exit
 #include <string.h>  //strtok
 
 #include "args.h"
 #include "list.h"
+
+static const char TERMINATE[] = {'!'};
 
 static char message_slots[LIST_MAX_NUM_NODES][1024];
 static unsigned int slot_i = 0;
@@ -26,6 +29,11 @@ void *init_input_reciever(void *_args) {
         printf("> ");
         scanf("%[^\n]%*c", message_slots[slot_i]);
         List_add(list, &message_slots[slot_i]);
+
+        if (strncmp(TERMINATE, message_slots[slot_i], sizeof TERMINATE) == 0) {
+            exit(0);
+        }
+
         inc_slot();
         pthread_mutex_unlock(&lock);
     }

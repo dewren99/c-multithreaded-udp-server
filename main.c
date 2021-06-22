@@ -14,67 +14,63 @@
 #include "message_printer.h"
 #include "server.h"
 
-static bool validate_action(char *action) {
-    return strncmp("s-talk", action, 6) == 0
-               ? true
-               : printf("Command \"%s\" not found, expected \"s-talk\"\n",
-                        action) &&
-                     false;
+static const unsigned int DEBUG = 0;
+
+static void validate_argc(int argc) {
+    if (argc != 4) {
+        printf("Expected 3 arguments, got %d\n",
+               argc - 1);  // exclude "./s-talk"
+        exit(1);
+    }
 }
 
-static bool validate_port(unsigned int port) {
+static void validate_port(unsigned int port) {
     if (port > 65353) {
         printf("Port number %d is invalid, maximum value is 65353\n", port);
-        return false;
+        exit(1);
     } else if (port < 1023) {
         printf("Port number %d is invalid, ports 0-1023 are usually reserved\n",
                port);
-        return false;
+        exit(1);
     }
-    return true;
 }
 
-int main() {
-    printf("[S-TALK] \n");
-    // char init_conn_command[100] = "s-talk 6060 csil-cpu3 6001";
-    char init_conn_command[100];
-    const char delim[3] = " \t";
+static void validate_hostbyname(struct hostent *hostbyname, char *server_name) {
+    if (!hostbyname) {
+        printf("Could not find the host by the name %s\n", server_name);
+        exit(1);
+    }
+}
+
+// argv[0] is ./s-talk
+// argv[1] is local port number
+// argv[2] is remote machine name
+// argv[3] is remote port number
+int main(int argc, char **argv) {
+    validate_argc(argc);
     char action[24];
     unsigned int local_port;
     char server_name[24];
     unsigned int remote_port;
 
-    printf("Initiate the simple talk: ");
-    scanf("%[^\n]%*c", init_conn_command);
-    char *token = strtok(init_conn_command, delim);
+    strcpy(action, argv[0]);
+    strcpy(server_name, argv[2]);
 
-    strcpy(action, token);
-    if (!validate_action(action)) {
-        return -1;
-    }
-    token = strtok(NULL, delim);
-    local_port = atoi(token);
-    if (!validate_port(local_port)) {
-        return -1;
-    }
-    token = strtok(NULL, delim);
-    strcpy(server_name, token);
-    token = strtok(NULL, delim);
-    remote_port = atoi(token);
-    if (!validate_port(remote_port)) {
-        return -1;
-    }
+    local_port = atoi(argv[1]);
+    validate_port(local_port);
+
+    remote_port = atoi(argv[3]);
+    validate_port(remote_port);
 
     struct hostent *hostbyname = gethostbyname(server_name);
-    if (!hostbyname) {
-        printf("Could not find the host by the name %s\n", server_name);
-        return -1;
-    }
+    validate_hostbyname(hostbyname, server_name);
 
-    printf("action: %s\n", action);
-    printf("client port: %d\n", local_port);
-    printf("server name: %s\n", server_name);
-    printf("server port: %d\n\n", remote_port);
+    if (DEBUG) {
+        printf("action: %s\n", action);
+        printf("client port: %d\n", local_port);
+        printf("server name: %s\n", server_name);
+        printf("server port: %d\n\n", remote_port);
+    }
 
     List *messages_to_be_sent = List_create();
     List *messages_to_be_printed = List_create();

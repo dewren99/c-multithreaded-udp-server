@@ -34,7 +34,6 @@ void *init_server(void *_args) {
     struct args_s *args = _args;
     unsigned int port = args->port;
     List *list = args->message;
-    // char *hostname = args->hostname;
     pthread_mutex_t lock = args->lock;
     struct sockaddr_in client_addr, server_addr;
     int client_addr_len = sizeof client_addr;
@@ -76,8 +75,7 @@ void *init_server(void *_args) {
         // printf("server: %s\n", message_slots[slot_i]);
 
         if (strncmp(TERMINATE, message_slots[slot_i], sizeof TERMINATE) == 0) {
-            pthread_mutex_unlock(&lock);
-            break;
+            exit(0);
         }
 
         List_add(list, (void *)&message_slots[slot_i]);
