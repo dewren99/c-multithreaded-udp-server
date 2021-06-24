@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <pthread.h>  //pthread
 #include <stdio.h>
+#include <stdlib.h>      //free
 #include <string.h>      //memset
 #include <sys/socket.h>  //socket
 #include <unistd.h>      //close
@@ -37,8 +38,6 @@ void *init_client(void *_args) {
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
     server_addr.sin_addr.s_addr = inet_addr(hostname);
-    // INADDR_ANY;  // use the IP of the local
-    // machine
 
     int res;
     while (1) {
@@ -51,7 +50,7 @@ void *init_client(void *_args) {
             if (res < 0) {
                 printf("Message could not be sent\n");
             }
-            List_remove(list);
+            free(List_remove(list));
         }
         pthread_mutex_unlock(&lock);
     }

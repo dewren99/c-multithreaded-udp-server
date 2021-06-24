@@ -20,15 +20,8 @@
 #include "list.h"
 
 static const char TERMINATE[] = {'!'};
-
-static char message_slots[LIST_MAX_NUM_NODES][1024];
-static unsigned int slot_i = 0;
-static void inc_slot() {
-    slot_i = (LIST_MAX_NUM_NODES + slot_i + 1) % LIST_MAX_NUM_NODES;
-}
-static void dec_slot() {
-    slot_i = (LIST_MAX_NUM_NODES + slot_i - 1) % LIST_MAX_NUM_NODES;
-}
+static const unsigned int MAX_MESSAGE_LEN = 1024;
+static const unsigned int MAX_MESSAGE_SIZE = sizeof(char) * MAX_MESSAGE_LEN;
 
 void *init_server(void *_args) {
     struct args_s *args = _args;
@@ -54,18 +47,17 @@ void *init_server(void *_args) {
     if (res < 0) {
         printf("[SERVER] Port could not be binded\n");
         exit(1);
-        // return NULL;
     }
 
     while (1) {
+        char *message_slot = (char *)calloc(MAX_MESSAGE_LEN, sizeof(char));
         pthread_mutex_lock(&lock);
-        memset(&message_slots[slot_i], 0, sizeof message_slots[slot_i]);
-        res = recvfrom(server_socket, message_slots[slot_i],
-                       sizeof message_slots[slot_i], 0,
+
+        res = recvfrom(server_socket, message_slot, MAX_MESSAGE_SIZE, 0,
                        (struct sockaddr *)&client_addr, &client_addr_len);
         if (res < 0) {
             printf("[SERVER] Could not recieve incoming messages\n");
-            return NULL;
+            exit(1);
         }
 
         const char *client_ipv4 = inet_ntoa(client_addr.sin_addr);
@@ -74,13 +66,12 @@ void *init_server(void *_args) {
         // client_ipv4, client_port);
         // printf("server: %s\n", message_slots[slot_i]);
 
-        if (strncmp(TERMINATE, message_slots[slot_i], sizeof TERMINATE) == 0) {
+        if (strncmp(TERMINATE, message_slot, sizeof TERMINATE) == 0) {
             exit(0);
         }
 
-        List_add(list, (void *)&message_slots[slot_i]);
-        inc_slot();
-
+        List_add(list, (void *)message_slot);
+        message_slot = NULL;
         pthread_mutex_unlock(&lock);
     }
 
