@@ -16,15 +16,16 @@
 
 #include "args.h"
 #include "list.h"
-// #include "message.h"
 
 void *init_client(void *_args) {
+    // printf("INIT CLIENT\n");
     struct args_s *args = _args;
     unsigned int port = args->port;
+    pthread_cond_t *cond = args->cond;
+    pthread_mutex_t *lock = args->lock;
     char *hostname = args->hostname;
-    List *list = args->message;
+    List *list = args->list;
     char *message;
-    pthread_mutex_t lock = args->lock;
 
     // create socket
     int client_socket = socket(AF_INET, SOCK_DGRAM, 0);
@@ -41,8 +42,15 @@ void *init_client(void *_args) {
 
     int res;
     while (1) {
-        pthread_mutex_lock(&lock);
-        if (list && List_count(list)) {
+        // printf("CLIENT ASK\n");
+        pthread_mutex_lock(lock);
+        // printf("CLIENT ENTER\n");
+        while (!List_count(list)) {
+            // printf("CLIENT WAIT\n");
+            pthread_cond_wait(cond, lock);
+        }
+        // printf("CLIENT SEND\n");
+        while (List_count(list)) {
             message = (char *)List_first(list);
             res = sendto(client_socket, message, strlen(message), 0,
                          (const struct sockaddr *)&server_addr,
@@ -52,7 +60,8 @@ void *init_client(void *_args) {
             }
             free(List_remove(list));
         }
-        pthread_mutex_unlock(&lock);
+        pthread_cond_signal(cond);
+        pthread_mutex_unlock(lock);
     }
 
     close(client_socket);

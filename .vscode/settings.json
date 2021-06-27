@@ -2,6 +2,7 @@
     "files.associations": {
         "message.h": "c",
         "socket.h": "c",
-        "netdb.h": "c"
+        "netdb.h": "c",
+        "unistd.h": "c"
     }
 }

@@ -77,36 +77,47 @@ int main(int argc, char **argv) {
 
     pthread_t await_datagram, get_input, send_datagram, printer;
     pthread_mutex_t messages_to_be_sent_lock, messages_to_be_printed_lock;
+    pthread_cond_t unprinted_message_avail, unsent_message_avail;
     pthread_mutex_init(&messages_to_be_sent_lock, NULL);
     pthread_mutex_init(&messages_to_be_printed_lock, NULL);
+    pthread_cond_init(&unprinted_message_avail, NULL);
+    pthread_cond_init(&unsent_message_avail, NULL);
 
     struct args_s args_server, args_client, args_input, args_printer;
     args_server.port = local_port;
-    args_server.lock = messages_to_be_printed_lock;
-    args_server.message = messages_to_be_printed;
+    args_server.lock = &messages_to_be_printed_lock;
+    args_server.list = messages_to_be_printed;
+    args_server.cond = &unprinted_message_avail;
 
     args_client.port = remote_port;
-    args_client.message = messages_to_be_sent;
-    args_client.lock = messages_to_be_sent_lock;
+    args_client.list = messages_to_be_sent;
+    args_client.lock = &messages_to_be_sent_lock;
     args_client.hostname =
         inet_ntoa(*((struct in_addr *)hostbyname->h_addr_list[0]));
+    args_client.cond = &unsent_message_avail;
 
-    args_input.message = messages_to_be_sent;
-    args_input.lock = messages_to_be_sent_lock;
+    args_input.list = messages_to_be_sent;
+    args_input.lock = &messages_to_be_sent_lock;
+    args_input.cond = &unsent_message_avail;
 
-    args_printer.message = messages_to_be_printed;
-    args_printer.lock = messages_to_be_printed_lock;
+    args_printer.list = messages_to_be_printed;
+    args_printer.lock = &messages_to_be_printed_lock;
+    args_printer.cond = &unprinted_message_avail;
 
     pthread_create(&await_datagram, NULL, init_server, (void *)&args_server);
-    pthread_create(&get_input, NULL, init_input_reciever, (void *)&args_input);
     pthread_create(&send_datagram, NULL, init_client, (void *)&args_client);
+    pthread_create(&get_input, NULL, init_input_reciever, (void *)&args_input);
+
     pthread_create(&printer, NULL, init_message_printer, (void *)&args_printer);
 
     while (1)
         ;
 
+    // clear mutexes and cond. variables
     pthread_mutex_destroy(&messages_to_be_sent_lock);
     pthread_mutex_destroy(&messages_to_be_printed_lock);
+    pthread_cond_destroy(&unprinted_message_avail);
+    pthread_cond_destroy(&unsent_message_avail);
 
     return 0;
 }

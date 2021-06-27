@@ -24,10 +24,11 @@ static const unsigned int MAX_MESSAGE_LEN = 1024;
 static const unsigned int MAX_MESSAGE_SIZE = sizeof(char) * MAX_MESSAGE_LEN;
 
 void *init_server(void *_args) {
-    struct args_s *args = _args;
+    struct args_s *args = (struct args_s *)_args;
     unsigned int port = args->port;
-    List *list = args->message;
-    pthread_mutex_t lock = args->lock;
+    List *list = args->list;
+    pthread_cond_t *cond = args->cond;
+    pthread_mutex_t *lock = args->lock;
     struct sockaddr_in client_addr, server_addr;
     int client_addr_len = sizeof client_addr;
 
@@ -50,9 +51,14 @@ void *init_server(void *_args) {
     }
 
     while (1) {
+        // printf("SERVER ASK\n");
         char *message_slot = (char *)calloc(MAX_MESSAGE_LEN, sizeof(char));
-        pthread_mutex_lock(&lock);
-
+        pthread_mutex_lock(lock);
+        while (List_count(list)) {
+            // printf("SERVER WAITING - there are unprinted messaged\n");
+            pthread_cond_wait(cond, lock);
+        }
+        // printf("SERVER PASS\n");
         res = recvfrom(server_socket, message_slot, MAX_MESSAGE_SIZE, 0,
                        (struct sockaddr *)&client_addr, &client_addr_len);
         if (res < 0) {
@@ -63,16 +69,20 @@ void *init_server(void *_args) {
         const char *client_ipv4 = inet_ntoa(client_addr.sin_addr);
         const uint16_t client_port = ntohs(client_addr.sin_port);
         // printf("[SERVER] received message from address: %s:%d\n",
-        // client_ipv4, client_port);
-        // printf("server: %s\n", message_slots[slot_i]);
+        // client_ipv4,
+        //        client_port);
+        // printf("server: %s\n", message_slot);
 
         if (strncmp(TERMINATE, message_slot, sizeof TERMINATE) == 0) {
             exit(0);
         }
 
-        List_add(list, (void *)message_slot);
+        if (List_add(list, (void *)message_slot) == -1) {
+            printf("\nERROR: Server could not process the recieved message\n");
+        }
         message_slot = NULL;
-        pthread_mutex_unlock(&lock);
+        pthread_cond_signal(cond);
+        pthread_mutex_unlock(lock);
     }
 
     close(server_socket);
