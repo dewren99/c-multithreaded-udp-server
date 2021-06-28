@@ -9,7 +9,6 @@
 
 static const char TERMINATE[] = {'!'};
 static const unsigned int MAX_MESSAGE_LEN = 1024;
-static const unsigned int MAX_MESSAGE_SIZE = sizeof(char) * MAX_MESSAGE_LEN;
 
 void *init_input_reciever(void *_args) {
     struct args_s *args = _args;
@@ -25,7 +24,7 @@ void *init_input_reciever(void *_args) {
             pthread_cond_wait(cond, lock);
         }
         char *message_slot = calloc(MAX_MESSAGE_LEN, sizeof *message_slot);
-        fgets(message_slot, MAX_MESSAGE_SIZE, stdin);
+        fgets(message_slot, MAX_MESSAGE_LEN, stdin);
         message_slot[strlen(message_slot) - 1] =
             '\0';  // remove trailing whitespace
 

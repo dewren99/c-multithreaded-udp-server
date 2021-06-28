@@ -21,7 +21,6 @@
 
 static const char TERMINATE[] = {'!'};
 static const unsigned int MAX_MESSAGE_LEN = 1024;
-static const unsigned int MAX_MESSAGE_SIZE = sizeof(char) * MAX_MESSAGE_LEN;
 
 void *init_server(void *_args) {
     struct args_s *args = (struct args_s *)_args;
@@ -59,7 +58,7 @@ void *init_server(void *_args) {
         }
         // printf("SERVER PASS\n");
         char *message_slot = calloc(MAX_MESSAGE_LEN, sizeof *message_slot);
-        res = recvfrom(server_socket, message_slot, MAX_MESSAGE_SIZE, 0,
+        res = recvfrom(server_socket, message_slot, MAX_MESSAGE_LEN, 0,
                        (struct sockaddr *)&client_addr, &client_addr_len);
         if (res < 0) {
             printf("[SERVER] Could not recieve incoming messages\n");
