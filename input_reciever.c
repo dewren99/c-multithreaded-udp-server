@@ -24,9 +24,6 @@ void *init_input_reciever(void *_args) {
             // printf("INPUT RECIEVER WAIT - there are unsent messages\n");
             pthread_cond_wait(cond, lock);
         }
-        // printf("INPUT RECIEVER PASS\n");
-        // printf("> ");
-        // scanf("%[^\n]%*c", message_slot);
         char *message_slot = calloc(MAX_MESSAGE_LEN, sizeof *message_slot);
         fgets(message_slot, MAX_MESSAGE_SIZE, stdin);
         message_slot[strlen(message_slot) - 1] =

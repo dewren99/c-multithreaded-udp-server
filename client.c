@@ -18,7 +18,6 @@
 #include "list.h"
 
 void *init_client(void *_args) {
-    // printf("INIT CLIENT\n");
     struct args_s *args = _args;
     unsigned int port = args->port;
     pthread_cond_t *cond = args->cond;
@@ -42,14 +41,10 @@ void *init_client(void *_args) {
 
     int res;
     while (1) {
-        // printf("CLIENT ASK\n");
         pthread_mutex_lock(lock);
-        // printf("CLIENT ENTER\n");
         while (!List_count(list)) {
-            // printf("CLIENT WAIT\n");
             pthread_cond_wait(cond, lock);
         }
-        // printf("CLIENT SEND\n");
         while (List_count(list)) {
             char *message = (char *)List_first(list);
             res = sendto(client_socket, message, strlen(message), 0,
