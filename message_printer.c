@@ -19,8 +19,13 @@ void *init_message_printer(void *_args) {
         }
         while (List_count(list)) {
             char *message = (char *)List_first(list);
-            printf("< %s\n", message);
-            free(List_remove(list));
+
+            printf("\nPRINTER GOT: %s, strlen: %d, ptr: %p\n", message,
+                   strlen(message), message);
+            char *ptr_to_be_freed = List_remove(list);
+            printf("\nPRINTER TO BE FREED: %p\n", ptr_to_be_freed);
+            free(ptr_to_be_freed);
+            printf("\nPRINTER FREED: %p\n", ptr_to_be_freed);
         }
         pthread_cond_signal(cond);
         pthread_mutex_unlock(lock);

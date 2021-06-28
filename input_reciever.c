@@ -19,7 +19,6 @@ void *init_input_reciever(void *_args) {
 
     while (1) {
         // printf("INPUT RECIEVER ASK\n");
-        char *message_slot = (char *)calloc(MAX_MESSAGE_LEN, sizeof(char));
         pthread_mutex_lock(lock);
         while (List_count(list)) {
             // printf("INPUT RECIEVER WAIT - there are unsent messages\n");
@@ -28,6 +27,7 @@ void *init_input_reciever(void *_args) {
         // printf("INPUT RECIEVER PASS\n");
         // printf("> ");
         // scanf("%[^\n]%*c", message_slot);
+        char *message_slot = calloc(MAX_MESSAGE_LEN, sizeof *message_slot);
         fgets(message_slot, MAX_MESSAGE_SIZE, stdin);
         message_slot[strlen(message_slot) - 1] =
             '\0';  // remove trailing whitespace
@@ -37,7 +37,7 @@ void *init_input_reciever(void *_args) {
             exit(0);
         }
 
-        if (strlen(message_slot)) {
+        if (strlen(message_slot) && message_slot) {
             if (List_add(list, (void *)message_slot) == -1) {
                 printf(
                     "\nERROR: Keyboard listener could not process the entered "

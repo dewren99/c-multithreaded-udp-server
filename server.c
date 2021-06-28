@@ -52,13 +52,13 @@ void *init_server(void *_args) {
 
     while (1) {
         // printf("SERVER ASK\n");
-        char *message_slot = (char *)calloc(MAX_MESSAGE_LEN, sizeof(char));
         pthread_mutex_lock(lock);
         while (List_count(list)) {
             // printf("SERVER WAITING - there are unprinted messaged\n");
             pthread_cond_wait(cond, lock);
         }
         // printf("SERVER PASS\n");
+        char *message_slot = calloc(MAX_MESSAGE_LEN, sizeof *message_slot);
         res = recvfrom(server_socket, message_slot, MAX_MESSAGE_SIZE, 0,
                        (struct sockaddr *)&client_addr, &client_addr_len);
         if (res < 0) {
@@ -76,12 +76,17 @@ void *init_server(void *_args) {
         if (strncmp(TERMINATE, message_slot, sizeof TERMINATE) == 0) {
             exit(0);
         }
-
-        if (List_add(list, (void *)message_slot) == -1) {
-            printf(
-                "\nWARNING: Server could not add \"%s\" to the messages to be "
-                "printed list\n",
-                message_slot);
+        if (strlen(message_slot) && message_slot) {
+            if (List_add(list, (void *)message_slot) == -1) {
+                printf(
+                    "\nWARNING: Server could not add \"%s\" to the messages to "
+                    "be "
+                    "printed list\n",
+                    message_slot);
+                free(message_slot);
+            }
+        } else {
+            free(message_slot);
         }
         message_slot = NULL;
         pthread_cond_signal(cond);
