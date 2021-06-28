@@ -25,12 +25,12 @@ void *init_client(void *_args) {
     pthread_mutex_t *lock = args->lock;
     char *hostname = args->hostname;
     List *list = args->list;
-    char *message;
 
     // create socket
     int client_socket = socket(AF_INET, SOCK_DGRAM, 0);
     if (client_socket < 0) {
-        printf("Socket could not be created\n");
+        printf("ERROR: Socket could not be created\n");
+        exit(1);
     }
 
     struct sockaddr_in server_addr;
@@ -51,12 +51,13 @@ void *init_client(void *_args) {
         }
         // printf("CLIENT SEND\n");
         while (List_count(list)) {
-            message = (char *)List_first(list);
+            char *message = (char *)List_first(list);
             res = sendto(client_socket, message, strlen(message), 0,
                          (const struct sockaddr *)&server_addr,
                          sizeof server_addr);
             if (res < 0) {
-                printf("Message could not be sent\n");
+                printf("WARNING: Client could not sent the message \"%s\"\n",
+                       message);
             }
             free(List_remove(list));
         }

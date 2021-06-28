@@ -26,13 +26,14 @@ void *init_input_reciever(void *_args) {
             pthread_cond_wait(cond, lock);
         }
         // printf("INPUT RECIEVER PASS\n");
-        printf("> ");
+        // printf("> ");
         // scanf("%[^\n]%*c", message_slot);
         fgets(message_slot, MAX_MESSAGE_SIZE, stdin);
         message_slot[strlen(message_slot) - 1] =
             '\0';  // remove trailing whitespace
 
         if (strncmp(TERMINATE, message_slot, sizeof TERMINATE) == 0) {
+            free(message_slot);
             exit(0);
         }
 
@@ -40,8 +41,12 @@ void *init_input_reciever(void *_args) {
             if (List_add(list, (void *)message_slot) == -1) {
                 printf(
                     "\nERROR: Keyboard listener could not process the entered "
-                    "message\n");
+                    "message \"%s\"\n",
+                    message_slot);
+                free(message_slot);
             }
+        } else {
+            free(message_slot);
         }
 
         pthread_cond_signal(cond);

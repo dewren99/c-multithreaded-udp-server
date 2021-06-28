@@ -106,9 +106,8 @@ int main(int argc, char **argv) {
 
     pthread_create(&await_datagram, NULL, init_server, (void *)&args_server);
     pthread_create(&send_datagram, NULL, init_client, (void *)&args_client);
-    pthread_create(&get_input, NULL, init_input_reciever, (void *)&args_input);
-
     pthread_create(&printer, NULL, init_message_printer, (void *)&args_printer);
+    pthread_create(&get_input, NULL, init_input_reciever, (void *)&args_input);
 
     while (1)
         ;

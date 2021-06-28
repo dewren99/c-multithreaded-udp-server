@@ -68,17 +68,20 @@ void *init_server(void *_args) {
 
         const char *client_ipv4 = inet_ntoa(client_addr.sin_addr);
         const uint16_t client_port = ntohs(client_addr.sin_port);
-        // printf("[SERVER] received message from address: %s:%d\n",
-        // client_ipv4,
-        //        client_port);
-        // printf("server: %s\n", message_slot);
+        if (0) {
+            printf("[SERVER] received message from address: %s:%d\n",
+                   client_ipv4, client_port);
+        }
 
         if (strncmp(TERMINATE, message_slot, sizeof TERMINATE) == 0) {
             exit(0);
         }
 
         if (List_add(list, (void *)message_slot) == -1) {
-            printf("\nERROR: Server could not process the recieved message\n");
+            printf(
+                "\nWARNING: Server could not add \"%s\" to the messages to be "
+                "printed list\n",
+                message_slot);
         }
         message_slot = NULL;
         pthread_cond_signal(cond);

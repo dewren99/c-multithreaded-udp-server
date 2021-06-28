@@ -18,7 +18,8 @@ void *init_message_printer(void *_args) {
             pthread_cond_wait(cond, lock);
         }
         while (List_count(list)) {
-            printf("+: %s\n", (char *)List_first(list));
+            char *message = (char *)List_first(list);
+            printf("< %s\n", message);
             free(List_remove(list));
         }
         pthread_cond_signal(cond);
