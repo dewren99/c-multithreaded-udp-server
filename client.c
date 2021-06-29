@@ -54,12 +54,7 @@ void *init_client(void *_args) {
                 printf("WARNING: Client could not sent the message \"%s\"\n",
                        message);
             }
-            printf("\n CLIENT SENT: %s, strlen: %d, ptr: %p\n", message,
-                   strlen(message), message);
-            char *ptr_to_be_freed = List_remove(list);
-            printf("\nCLIENT TO BE FREED: %p\n", ptr_to_be_freed);
-            free(ptr_to_be_freed);
-            printf("\nCLIENT FREED: %p\n", ptr_to_be_freed);
+            free(List_remove(list));
         }
         pthread_cond_signal(cond);
         pthread_mutex_unlock(lock);

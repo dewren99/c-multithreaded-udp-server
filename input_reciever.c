@@ -8,7 +8,7 @@
 #include "list.h"
 
 static const char TERMINATE[] = {'!'};
-static const unsigned int MAX_MESSAGE_LEN = 1024;
+static const unsigned int MAX_MESSAGE_LEN = 100;
 
 void *init_input_reciever(void *_args) {
     struct args_s *args = _args;
@@ -17,10 +17,8 @@ void *init_input_reciever(void *_args) {
     List *list = args->list;
 
     while (1) {
-        // printf("INPUT RECIEVER ASK\n");
         pthread_mutex_lock(lock);
         while (List_count(list)) {
-            // printf("INPUT RECIEVER WAIT - there are unsent messages\n");
             pthread_cond_wait(cond, lock);
         }
         char *message_slot = calloc(MAX_MESSAGE_LEN, sizeof *message_slot);
@@ -33,7 +31,7 @@ void *init_input_reciever(void *_args) {
             exit(0);
         }
 
-        if (strlen(message_slot) && message_slot) {
+        if (message_slot && strlen(message_slot)) {
             if (List_add(list, (void *)message_slot) == -1) {
                 printf(
                     "\nERROR: Keyboard listener could not process the entered "

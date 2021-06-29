@@ -20,7 +20,7 @@
 #include "list.h"
 
 static const char TERMINATE[] = {'!'};
-static const unsigned int MAX_MESSAGE_LEN = 1024;
+static const unsigned int MAX_MESSAGE_LEN = 100;
 
 void *init_server(void *_args) {
     struct args_s *args = (struct args_s *)_args;
@@ -50,13 +50,10 @@ void *init_server(void *_args) {
     }
 
     while (1) {
-        // printf("SERVER ASK\n");
         pthread_mutex_lock(lock);
         while (List_count(list)) {
-            // printf("SERVER WAITING - there are unprinted messaged\n");
             pthread_cond_wait(cond, lock);
         }
-        // printf("SERVER PASS\n");
         char *message_slot = calloc(MAX_MESSAGE_LEN, sizeof *message_slot);
         res = recvfrom(server_socket, message_slot, MAX_MESSAGE_LEN, 0,
                        (struct sockaddr *)&client_addr, &client_addr_len);
@@ -65,12 +62,8 @@ void *init_server(void *_args) {
             exit(1);
         }
 
-        const char *client_ipv4 = inet_ntoa(client_addr.sin_addr);
-        const uint16_t client_port = ntohs(client_addr.sin_port);
-        if (0) {
-            printf("[SERVER] received message from address: %s:%d\n",
-                   client_ipv4, client_port);
-        }
+        // const char *client_ipv4 = inet_ntoa(client_addr.sin_addr);
+        // const uint16_t client_port = ntohs(client_addr.sin_port);
 
         if (strncmp(TERMINATE, message_slot, sizeof TERMINATE) == 0) {
             exit(0);
