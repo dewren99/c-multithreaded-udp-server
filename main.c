@@ -35,9 +35,10 @@ static void validate_port(unsigned int port) {
     }
 }
 
-static void validate_hostbyname(struct hostent *hostbyname, char *server_name) {
-    if (!hostbyname) {
-        printf("Could not find the host with the name %s\n", server_name);
+static void validate_getaddrinfo(int res, char *server_name) {
+    if (res != 0) {
+        printf("Could not find the IPv4 info for the host name \"%s\"\n",
+               server_name);
         exit(1);
     }
 }
@@ -62,8 +63,16 @@ int main(int argc, char **argv) {
     remote_port = atoi(argv[3]);
     validate_port(remote_port);
 
-    struct hostent *hostbyname = gethostbyname(server_name);
-    validate_hostbyname(hostbyname, server_name);
+    struct addrinfo hints, *getaddrinfo_res;
+    char host_ipv4[INET_ADDRSTRLEN];
+    hints.ai_family = AF_INET;
+
+    validate_getaddrinfo(
+        getaddrinfo(server_name, NULL, &hints, &getaddrinfo_res), server_name);
+    struct in_addr *addr =
+        &(((struct sockaddr_in *)getaddrinfo_res->ai_addr)->sin_addr);
+    // getaddrinfo_res->ai_family is AF_INET
+    inet_ntop(getaddrinfo_res->ai_family, addr, host_ipv4, sizeof host_ipv4);
 
     if (DEBUG) {
         printf("action: %s\n", action);
@@ -92,8 +101,8 @@ int main(int argc, char **argv) {
     args_client.port = remote_port;
     args_client.list = messages_to_be_sent;
     args_client.lock = &messages_to_be_sent_lock;
-    args_client.hostname =
-        inet_ntoa(*((struct in_addr *)hostbyname->h_addr_list[0]));
+    args_client.hostname = host_ipv4;
+
     args_client.cond = &unsent_message_avail;
 
     args_input.list = messages_to_be_sent;
