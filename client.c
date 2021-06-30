@@ -16,6 +16,7 @@
 
 #include "args.h"
 #include "list.h"
+#include "terminate.h"
 
 void *init_client(void *_args) {
     struct args_s *args = _args;
@@ -54,6 +55,7 @@ void *init_client(void *_args) {
                 printf("WARNING: Client could not sent the message \"%s\"\n",
                        message);
             }
+            should_program_terminate(message);
             free(List_remove(list));
         }
         pthread_cond_signal(cond);

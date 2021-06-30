@@ -19,8 +19,7 @@
 #include "args.h"
 #include "list.h"
 
-static const char TERMINATE[] = {'!'};
-static const unsigned int MAX_MESSAGE_LEN = 100;
+static const unsigned int MAX_INCOMING_MESSAGE_LEN = 256;
 
 void *init_server(void *_args) {
     struct args_s *args = (struct args_s *)_args;
@@ -54,8 +53,9 @@ void *init_server(void *_args) {
         while (List_count(list)) {
             pthread_cond_wait(cond, lock);
         }
-        char *message_slot = calloc(MAX_MESSAGE_LEN, sizeof *message_slot);
-        res = recvfrom(server_socket, message_slot, MAX_MESSAGE_LEN, 0,
+        char *message_slot =
+            calloc(MAX_INCOMING_MESSAGE_LEN, sizeof *message_slot);
+        res = recvfrom(server_socket, message_slot, MAX_INCOMING_MESSAGE_LEN, 0,
                        (struct sockaddr *)&client_addr, &client_addr_len);
         if (res < 0) {
             printf("[SERVER] Could not recieve incoming messages\n");
@@ -65,10 +65,7 @@ void *init_server(void *_args) {
         // const char *client_ipv4 = inet_ntoa(client_addr.sin_addr);
         // const uint16_t client_port = ntohs(client_addr.sin_port);
 
-        if (strncmp(TERMINATE, message_slot, sizeof TERMINATE) == 0) {
-            exit(0);
-        }
-        if (strlen(message_slot) && message_slot) {
+        if (message_slot && strlen(message_slot)) {
             if (List_add(list, (void *)message_slot) == -1) {
                 printf(
                     "\nWARNING: Server could not add \"%s\" to the messages to "

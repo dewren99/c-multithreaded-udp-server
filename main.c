@@ -37,7 +37,7 @@ static void validate_port(unsigned int port) {
 
 static void validate_hostbyname(struct hostent *hostbyname, char *server_name) {
     if (!hostbyname) {
-        printf("Could not find the host by the name %s\n", server_name);
+        printf("Could not find the host with the name %s\n", server_name);
         exit(1);
     }
 }

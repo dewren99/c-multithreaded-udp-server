@@ -1,0 +1,1 @@
+void should_program_terminate(char *);

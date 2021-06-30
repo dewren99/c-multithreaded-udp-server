@@ -5,6 +5,7 @@
 
 #include "args.h"
 #include "list.h"
+#include "terminate.h"
 
 void *init_message_printer(void *_args) {
     struct args_s *args = _args;
@@ -19,6 +20,7 @@ void *init_message_printer(void *_args) {
         while (List_count(list)) {
             char *message = (char *)List_first(list);
             printf("< %s\n", message);
+            should_program_terminate(message);
             free(List_remove(list));
         }
         pthread_cond_signal(cond);
