@@ -70,6 +70,7 @@ int main(int argc, char **argv) {
     char host_ipv4[INET_ADDRSTRLEN];
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_protocol = IPPROTO_UDP;
 
     validate_getaddrinfo(
         getaddrinfo(server_name, remote_port_str, &hints, &getaddrinfo_res),
