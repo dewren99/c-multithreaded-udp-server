@@ -39,6 +39,7 @@ static void validate_getaddrinfo(int res, char *server_name) {
     if (res != 0) {
         printf("Could not find the IPv4 info for the host name \"%s\"\n",
                server_name);
+        fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(res));
         exit(1);
     }
 }
@@ -53,6 +54,7 @@ int main(int argc, char **argv) {
     unsigned int local_port;
     char server_name[24];
     unsigned int remote_port;
+    char remote_port_str[24];
 
     strcpy(action, argv[0]);
     strcpy(server_name, argv[2]);
@@ -61,18 +63,22 @@ int main(int argc, char **argv) {
     validate_port(local_port);
 
     remote_port = atoi(argv[3]);
+    strcpy(remote_port_str, argv[3]);
     validate_port(remote_port);
 
     struct addrinfo hints, *getaddrinfo_res;
     char host_ipv4[INET_ADDRSTRLEN];
     hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
 
     validate_getaddrinfo(
-        getaddrinfo(server_name, NULL, &hints, &getaddrinfo_res), server_name);
+        getaddrinfo(server_name, remote_port_str, &hints, &getaddrinfo_res),
+        server_name);
     struct in_addr *addr =
         &(((struct sockaddr_in *)getaddrinfo_res->ai_addr)->sin_addr);
     // getaddrinfo_res->ai_family is AF_INET
     inet_ntop(getaddrinfo_res->ai_family, addr, host_ipv4, sizeof host_ipv4);
+    printf("Host ip: %s\n", host_ipv4);
 
     if (DEBUG) {
         printf("action: %s\n", action);
