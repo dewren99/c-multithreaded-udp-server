@@ -7,7 +7,7 @@
 #include "args.h"
 #include "list.h"
 
-static const unsigned int MAX_ENTERED_MESSAGE_LEN = 256;
+static const unsigned int MAX_ENTERED_MESSAGE_LEN = 2048;
 
 void *init_input_reciever(void *_args) {
     struct args_s *args = _args;

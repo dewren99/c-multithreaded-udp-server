@@ -19,7 +19,7 @@
 #include "args.h"
 #include "list.h"
 
-static const unsigned int MAX_INCOMING_MESSAGE_LEN = 256;
+static const unsigned int MAX_INCOMING_MESSAGE_LEN = 2048;
 
 void *init_server(void *_args) {
     struct args_s *args = (struct args_s *)_args;
