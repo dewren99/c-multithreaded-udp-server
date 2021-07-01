@@ -72,6 +72,8 @@ int main(int argc, char **argv) {
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_protocol = IPPROTO_UDP;
 
+    // getaddrinfo logic is inspired by:
+    // http://beej.us/guide/bgnet/pdf/bgnet_usl_c_1.pdf
     validate_getaddrinfo(
         getaddrinfo(server_name, remote_port_str, &hints, &getaddrinfo_res),
         server_name);
@@ -79,12 +81,13 @@ int main(int argc, char **argv) {
         &(((struct sockaddr_in *)getaddrinfo_res->ai_addr)->sin_addr);
     // getaddrinfo_res->ai_family is AF_INET
     inet_ntop(getaddrinfo_res->ai_family, addr, host_ipv4, sizeof host_ipv4);
-    printf("Host ip: %s\n", host_ipv4);
+    freeaddrinfo(getaddrinfo_res);
 
     if (DEBUG) {
         printf("action: %s\n", action);
         printf("client port: %d\n", local_port);
         printf("server name: %s\n", server_name);
+        printf("server IPv4: %s\n", host_ipv4);
         printf("server port: %d\n\n", remote_port);
     }
 
