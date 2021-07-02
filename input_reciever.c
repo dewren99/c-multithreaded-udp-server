@@ -7,17 +7,17 @@
 #include "args.h"
 #include "list.h"
 
-static const unsigned int MAX_ENTERED_MESSAGE_LEN = 256;
+static const unsigned int MAX_ENTERED_MESSAGE_LEN = 4096;
 
 void *init_input_reciever(void *_args) {
+    char *message_slot = NULL;
     struct args_s *args = _args;
     pthread_mutex_t *lock = args->lock;
     pthread_cond_t *cond = args->cond;
     List *list = args->list;
 
     while (1) {
-        char *message_slot =
-            calloc(MAX_ENTERED_MESSAGE_LEN, sizeof *message_slot);
+        message_slot = calloc(MAX_ENTERED_MESSAGE_LEN, sizeof *message_slot);
         pthread_mutex_lock(lock);
         while (List_count(list)) {
             pthread_cond_wait(cond, lock);
@@ -42,6 +42,5 @@ void *init_input_reciever(void *_args) {
         pthread_cond_signal(cond);
         pthread_mutex_unlock(lock);
     }
-
     return NULL;
 }

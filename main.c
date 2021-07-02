@@ -13,6 +13,7 @@
 #include "list.h"
 #include "message_printer.h"
 #include "server.h"
+#include "terminate.h"
 
 static const unsigned int DEBUG = 0;
 
@@ -35,9 +36,11 @@ static void validate_port(unsigned int port) {
     }
 }
 
-static void validate_hostbyname(struct hostent *hostbyname, char *server_name) {
-    if (!hostbyname) {
-        printf("Could not find the host with the name %s\n", server_name);
+static void validate_getaddrinfo(int res, char *server_name) {
+    if (res != 0) {
+        printf("Could not find the IPv4 info for the host name \"%s\"\n",
+               server_name);
+        fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(res));
         exit(1);
     }
 }
@@ -52,6 +55,7 @@ int main(int argc, char **argv) {
     unsigned int local_port;
     char server_name[24];
     unsigned int remote_port;
+    char remote_port_str[24];
 
     strcpy(action, argv[0]);
     strcpy(server_name, argv[2]);
@@ -60,15 +64,31 @@ int main(int argc, char **argv) {
     validate_port(local_port);
 
     remote_port = atoi(argv[3]);
+    strcpy(remote_port_str, argv[3]);
     validate_port(remote_port);
 
-    struct hostent *hostbyname = gethostbyname(server_name);
-    validate_hostbyname(hostbyname, server_name);
+    struct addrinfo hints, *getaddrinfo_res;
+    char host_ipv4[INET_ADDRSTRLEN];
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_protocol = IPPROTO_UDP;
+
+    // getaddrinfo logic is inspired by:
+    // http://beej.us/guide/bgnet/pdf/bgnet_usl_c_1.pdf
+    validate_getaddrinfo(
+        getaddrinfo(server_name, remote_port_str, &hints, &getaddrinfo_res),
+        server_name);
+    struct in_addr *addr =
+        &(((struct sockaddr_in *)getaddrinfo_res->ai_addr)->sin_addr);
+    // getaddrinfo_res->ai_family is AF_INET
+    inet_ntop(getaddrinfo_res->ai_family, addr, host_ipv4, sizeof host_ipv4);
+    freeaddrinfo(getaddrinfo_res);
 
     if (DEBUG) {
         printf("action: %s\n", action);
         printf("client port: %d\n", local_port);
         printf("server name: %s\n", server_name);
+        printf("server IPv4: %s\n", host_ipv4);
         printf("server port: %d\n\n", remote_port);
     }
 
@@ -92,8 +112,8 @@ int main(int argc, char **argv) {
     args_client.port = remote_port;
     args_client.list = messages_to_be_sent;
     args_client.lock = &messages_to_be_sent_lock;
-    args_client.hostname =
-        inet_ntoa(*((struct in_addr *)hostbyname->h_addr_list[0]));
+    args_client.hostname = host_ipv4;
+
     args_client.cond = &unsent_message_avail;
 
     args_input.list = messages_to_be_sent;
@@ -109,8 +129,18 @@ int main(int argc, char **argv) {
     pthread_create(&printer, NULL, init_message_printer, (void *)&args_printer);
     pthread_create(&get_input, NULL, init_input_reciever, (void *)&args_input);
 
-    while (1)
+    pthread_detach(await_datagram);
+    pthread_detach(send_datagram);
+    pthread_detach(printer);
+    pthread_detach(get_input);
+
+    while (is_running())
         ;
+
+    pthread_cancel(await_datagram);
+    pthread_cancel(send_datagram);
+    pthread_cancel(printer);
+    pthread_cancel(get_input);
 
     // clear mutexes and cond. variables
     pthread_mutex_destroy(&messages_to_be_sent_lock);
