@@ -13,6 +13,7 @@
 #include "list.h"
 #include "message_printer.h"
 #include "server.h"
+#include "terminate.h"
 
 static const unsigned int DEBUG = 0;
 
@@ -128,8 +129,18 @@ int main(int argc, char **argv) {
     pthread_create(&printer, NULL, init_message_printer, (void *)&args_printer);
     pthread_create(&get_input, NULL, init_input_reciever, (void *)&args_input);
 
-    while (1)
+    pthread_detach(await_datagram);
+    pthread_detach(send_datagram);
+    pthread_detach(printer);
+    pthread_detach(get_input);
+
+    while (is_running())
         ;
+
+    pthread_cancel(await_datagram);
+    pthread_cancel(send_datagram);
+    pthread_cancel(printer);
+    pthread_cancel(get_input);
 
     // clear mutexes and cond. variables
     pthread_mutex_destroy(&messages_to_be_sent_lock);

@@ -22,6 +22,7 @@
 static const unsigned int MAX_INCOMING_MESSAGE_LEN = 4096;
 
 void *init_server(void *_args) {
+    char *message_slot = NULL;
     struct args_s *args = (struct args_s *)_args;
     unsigned int port = args->port;
     List *list = args->list;
@@ -53,8 +54,7 @@ void *init_server(void *_args) {
         while (List_count(list)) {
             pthread_cond_wait(cond, lock);
         }
-        char *message_slot =
-            calloc(MAX_INCOMING_MESSAGE_LEN, sizeof *message_slot);
+        message_slot = calloc(MAX_INCOMING_MESSAGE_LEN, sizeof *message_slot);
         res = recvfrom(server_socket, message_slot, MAX_INCOMING_MESSAGE_LEN, 0,
                        (struct sockaddr *)&client_addr, &client_addr_len);
         if (res < 0) {
@@ -81,7 +81,6 @@ void *init_server(void *_args) {
         pthread_cond_signal(cond);
         pthread_mutex_unlock(lock);
     }
-
     close(server_socket);
     return NULL;
 }
